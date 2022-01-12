@@ -1,0 +1,1119 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="main.css" />
+    <title>
+        Game
+    </title>
+    <style>
+        h3 {
+            display: inline;
+        }
+
+        #score {
+            margin-right: 20px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="gui1Container">
+        <h3 id="score">Score: 0</h3>
+        <h3 id="lives">Lives: 3</h3>
+    </div>
+
+    <h5 id="enter-game">PRESS ENTER TO START</h5>
+
+    <span class="phase-one">Phase one</span>
+    <span class="phase-two">Phase two</span>
+    <span class="phase-three">Phase three</span>
+    <span class="you-won">You Won</span>
+    <span class="game-over">
+        <div>Game Over</div>
+        your destiny is the hellfire
+    </span>
+
+
+
+    <script src="three.js"></script>
+
+    <script type="module">
+        import * as THREE from 'https://cdn.skypack.dev/three@0.129.0/build/three.module.js';
+        import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.129.0/examples/jsm/loaders/GLTFLoader.js';
+        import { FBXLoader } from 'https://cdn.skypack.dev/three@0.129.0/examples/jsm/loaders/FBXLoader.js';
+        //new phases effects
+        function triggerPhaseOne() {
+            const phaseOne = document.querySelector(".phase-one");
+            phaseOne.classList.add("slide-right");
+        }
+        function triggerPhaseTwo() {
+            const phaseOne = document.querySelector(".phase-two");
+            phaseOne.classList.add("slide-right");
+        }
+        function triggerPhaseThree() {
+            const phaseOne = document.querySelector(".phase-three");
+            phaseOne.classList.add("slide-right");
+        }
+        function triggerYouWon() {
+            const phaseOne = document.querySelector(".you-won");
+            phaseOne.classList.add("slide-right");
+        }
+        function triggerGameOver() {
+            const phaseOne = document.querySelector(".game-over");
+            phaseOne.classList.add("slide-down");
+        }
+
+
+
+        var charModel_HitBox_X = 2, charModel_HitBox_Y = 5, charModel_HitBox_Z = 2;
+        var boxModel_HitBox_X = 4, boxModel_HitBox_Y = 12, boxModel_HitBox_Z = 4;
+        var taxiModel_HitBox_X = 3.5, taxiModel_HitBox_Y = 11, taxiModel_HitBox_Z = 11;
+        var wheelModel_HitBox_X = 2, wheelModel_HitBox_Y = 12, wheelModel_HitBox_Z = 17;
+
+        var boxModel_HitBox = [];
+        var taxiModel_HitBox = [];
+        var wheelModel_HitBox = [];
+        var wheelModel_HitBox1 = [];
+
+        //TAXI
+        var taxiGeometry = new THREE.BoxGeometry(taxiModel_HitBox_X, taxiModel_HitBox_Y, taxiModel_HitBox_Z);
+        var taxiMaterial = new THREE.MeshBasicMaterial({ color: 0x0000FF, opacity: 0, transparent: true });
+
+        //CHAR
+        var charGeometry = new THREE.BoxGeometry(charModel_HitBox_X, charModel_HitBox_Y, charModel_HitBox_Z);
+        var charMaterial = new THREE.MeshBasicMaterial({ color: 0x00FF00 });
+
+        //BOX
+        var CubeGeometry = new THREE.BoxGeometry(boxModel_HitBox_X, boxModel_HitBox_Y, boxModel_HitBox_Z);
+        var CubeMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000, opacity: 0, transparent: true });
+
+        //WHEEL
+        var wheelGeometry = new THREE.BoxGeometry(wheelModel_HitBox_X, wheelModel_HitBox_Y, wheelModel_HitBox_Z);
+        var wheelMaterial = new THREE.MeshBasicMaterial({ color: 0x00FF00, opacity: 0, transparent: true });
+
+
+
+        //CREATE THE SCENE OBJECT
+        var scene = new THREE.Scene();
+        //CREATE CAMERA OBJECT
+        //NEAR PLANE IS THE MINIMUM POSITION IN Z OR X OR Y  X's THAT OBJECTS EQUAL OR FAR THAN IT WILL BE VIEWED
+        //FAR PLANE IS THE MAXIUM POSITION IN Z OR X OR Y X's DEPENDS ON THE CAMERA POSITION THAT OBJECTS EQUAL OR NEARER THAN IT WILL BE VIEWED
+        var camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.01, 10000);
+        //CHANGE CAMERA POSITION
+        camera.position.z = 523;
+        camera.position.y = 400;//400
+        rotateObject(camera, 290);
+        scene.add(camera);
+        //CREATE THE RENDER OBJECT
+        var renderer = new THREE.WebGLRenderer();
+        //SET THE SIZE OF THE DISPLAY SCREEN
+        renderer.setSize(window.innerWidth, window.innerHeight - 100);
+        //ADD THE RENDER TO HTML BODY
+        document.body.appendChild(renderer.domElement);
+        //Rotation function
+        function rotateObject(object, degreeX = 0, degreeY = 0, degreeZ = 0) {
+            object.rotateX(THREE.Math.degToRad(degreeX));
+            object.rotateY(THREE.Math.degToRad(degreeY));
+            object.rotateZ(THREE.Math.degToRad(degreeZ));
+        }
+
+        //ORBIT CONTROLS
+        // var orbitControl = new THREE.OrbitControls(camera, renderer.domElement);
+        //FONT OBJECT
+
+        //CREATING THE FLOOR                       //(width,height,width segments,height segments)
+        var floorGeometry = new THREE.PlaneGeometry(20, 1000, 10, 10);
+        var floorMaterial = new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load("textures/road.jpg"), wireframe: false, side: THREE.DoubleSide });
+        var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        rotateObject(floor, 90, 0, 0);
+        scene.add(floor);
+        //LEVELS
+        var level2;
+        var level3;
+        //THEME1
+        var themeGeometry1 = new THREE.BoxGeometry(1500, 1500, 1500);
+        var theme1 = new THREE.Mesh(themeGeometry1, [
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme1/rainbow_ft.png'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme1/rainbow_bk.png'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme1/rainbow_up.png'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme1/rainbow_dn.png'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme1/rainbow_rt.png'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme1/rainbow_lf.png'), side: THREE.BackSide }),
+        ]);
+        scene.add(theme1);
+        //THEME2
+        var themeGeometry2 = new THREE.BoxGeometry(1500, 1500, 1500);
+        var theme2 = new THREE.Mesh(themeGeometry2, [
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme2/desertdawn_ft.jpg'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme2/desertdawn_bk.jpg'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme2/desertdawn_up.jpg'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme2/desertdawn_dn.jpg'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme2/desertdawn_rt.jpg'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme2/desertdawn_lf.jpg'), side: THREE.BackSide }),
+        ]);
+        //THEME3
+        var themeGeometry3 = new THREE.BoxGeometry(1500, 1500, 1500);
+        var theme3 = new THREE.Mesh(themeGeometry3, [
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme3/sleepyhollow_ft.jpg'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme3/sleepyhollow_bk.jpg'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme3/sleepyhollow_up.jpg'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme3/sleepyhollow_dn.jpg'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme3/sleepyhollow_rt.jpg'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/theme3/sleepyhollow_lf.jpg'), side: THREE.BackSide }),
+        ]);
+        //LOSE THEME
+        var loseThemeGeometry = new THREE.BoxGeometry(1500, 1500, 1500);
+        var loseTheme = new THREE.Mesh(loseThemeGeometry, [
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/losetheme/hot_ft.png'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/losetheme/hot_bk.png'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/losetheme/hot_up.png'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/losetheme/hot_dn.png'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/losetheme/hot_rt.png'), side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('textures/losetheme/hot_lf.png'), side: THREE.BackSide }),
+        ]);
+
+        //LIGHTS FOR ALL THE MODELS
+        //ambientLight(color,strength)
+        var ambientLight = new THREE.AmbientLight(0xFFFFFF, 2);
+        scene.add(ambientLight);
+        //add light for 3D models (THERE MUST BE ANY OTHER LIGHT WITH THE AMBIENT)
+        var directionLight = new THREE.DirectionalLight(0xFFFFFF, 3);
+        scene.add(directionLight);
+
+        var charIsLoaded = false;
+        var char;
+        var idleAnimMixer;
+        var runAnimMixer;
+        var fallAnimMixer;
+        var victoryAnimMixer;
+        var charLoader = new FBXLoader();
+        var charModel_HitBox;
+
+        charLoader.load("models/charactermodel/animations/char-idle.fbx", function (obj) {
+            charIsLoaded = true;
+            char = obj;
+            char.scale.set(0.04, 0.04, 0.04);
+            char.position.set(0, 1.3, 502);
+            rotateObject(char, 0, 180, 0);
+            scene.add(char);
+
+            charModel_HitBox = new THREE.Mesh(charGeometry, charMaterial);
+            charModel_HitBox.position.set(0, 3.3, 502);
+
+
+        });
+        //counter clock
+        var clock = new THREE.Clock();
+        //animation booleans
+        var isIdle = false;
+        var isRunning = false;
+        var isFalling = false;
+        var isWinning = false;
+        var idleLoaded = false;
+        var runningLoaded = false;
+        var fallingLoaded = false;
+        var victoryLoaded = false;
+        ////////mixers need to be called only once//////////
+        //idle animation
+        function idleAnimation() {
+            if (charIsLoaded) {
+                idleAnimMixer = new THREE.AnimationMixer(char);
+                var idleAction = idleAnimMixer.clipAction(char.animations[0]);
+                idleAction.play();
+                idleLoaded = true;
+                isIdle = true;
+
+            }
+        }
+
+        //the update function must be written in a loop
+        function updateIdleAnimation() {
+            if (idleLoaded && isIdle) {
+
+                var dt = clock.getDelta();
+                idleAnimMixer.update(dt);
+            }
+        }
+
+        //run animation
+
+        function runAnimation() {
+            if (charIsLoaded) {
+                var fbxLoader = new FBXLoader();
+                fbxLoader.load('models/charactermodel/animations/Fast Run.fbx', (animObj) => {
+                    runAnimMixer = new THREE.AnimationMixer(char);
+                    var runAction = runAnimMixer.clipAction(animObj.animations[0]);
+                    runAction.play();
+                    runningLoaded = true;
+                });
+            }
+        }
+
+        function updateRunningAnimation() {
+            if (runningLoaded && isRunning) {
+                var dt = clock.getDelta();
+                runAnimMixer.update(dt);
+            }
+        }
+        //fall animation
+        function fallAnimation() {
+            if (charIsLoaded) {
+                var fbxLoader = new FBXLoader();
+                fbxLoader.load('models/charactermodel/animations/Falling.fbx', (animObj) => {
+                    fallAnimMixer = new THREE.AnimationMixer(char);
+                    var fallAction = fallAnimMixer.clipAction(animObj.animations[0]);
+                    fallAction.play();
+                    fallAction.loop = THREE.LoopOnce;
+                    fallingLoaded = true;
+                });
+            }
+        }
+
+        function updateFallingAnimation() {
+            if (fallingLoaded && isFalling) {
+                var dt = clock.getDelta();
+                fallAnimMixer.update(dt);
+            }
+        }
+        //victory animation
+        function victoryAnimation() {
+            if (charIsLoaded) {
+                var fbxLoader = new FBXLoader();
+                fbxLoader.load('models/charactermodel/animations/Victory.fbx', (animObj) => {
+                    victoryAnimMixer = new THREE.AnimationMixer(char);
+                    var victoryAction = victoryAnimMixer.clipAction(animObj.animations[0]);
+                    victoryAction.play();
+                    victoryLoaded = true;
+                });
+            }
+        }
+
+        function updateVictoryAnimation() {
+            if (victoryLoaded && isWinning) {
+                var dt = clock.getDelta();
+                victoryAnimMixer.update(dt);
+            }
+        }
+
+
+        //////////////////////ADDING STREET MODELS///////////////////////////////
+        // ALL MODELS
+        var allModelsGroup = new THREE.Group();
+        // THE GROUP OBJECT
+        var group1 = new THREE.Group();
+        var group1Col = new THREE.Group();
+        //BOX
+        var boxModel;
+        var modelLoader = new GLTFLoader();
+        modelLoader.load("models/streetmodels/crate.glb", (obj) => {
+            boxModel = obj.scene;
+            boxModel.scale.set(2, 2, 2);
+            boxModel.position.set(-5, 4, 420);
+            group1.add(boxModel);
+
+
+            var tempMesh = new THREE.Mesh(CubeGeometry, CubeMaterial);
+            tempMesh.position.set(-5, 0, 420);
+            // scene.add(tempMesh);
+            boxModel_HitBox.push(tempMesh);
+
+            group1.add(tempMesh);
+
+        });
+        //TAXI
+        var taxiModel;
+        modelLoader.load("models/streetmodels/taxi.glb", (obj) => {
+            taxiModel = obj.scene;
+            taxiModel.scale.set(2, 2, 2);
+            taxiModel.position.set(3, 2.5, 330);
+            group1.add(taxiModel);
+
+            var tempMesh = new THREE.Mesh(taxiGeometry, taxiMaterial);
+            tempMesh.position.set(3, 0, 329);
+
+            // scene.add(tempMesh);
+            taxiModel_HitBox.push(tempMesh);
+            group1.add(tempMesh);
+
+
+        });
+        //WHEEL1
+        var wheelModel;
+        modelLoader.load("models/streetmodels/wheel1.glb", (obj) => {
+            wheelModel = obj.scene;
+            wheelModel.scale.set(3, 3, 3);
+            wheelModel.position.set(-4, 3, 270);
+            group1.add(wheelModel);
+
+
+            var tempMesh = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            tempMesh.position.set(-4, 0, 265);
+            // scene.add(tempMesh);
+            wheelModel_HitBox.push(tempMesh);
+            group1.add(tempMesh);
+
+
+        });
+
+        //WHEEL2
+        var wheelModel;
+        modelLoader.load("models/streetmodels/wheel2.glb", (obj) => {
+            wheelModel = obj.scene;
+            wheelModel.scale.set(3, 3, 3);
+            wheelModel.position.set(0, 3, 150);
+            group1.add(wheelModel);
+
+            var tempMesh = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            tempMesh.position.set(0, 0, 145);
+            //  scene.add(tempMesh);
+            wheelModel_HitBox1.push(tempMesh);
+            group1.add(tempMesh);
+
+
+        });
+
+        allModelsGroup.add(group1);
+
+        /////////second group of models
+        // THE GROUP OBJECT
+        var group2 = new THREE.Group();
+        var group2Col = new THREE.Group();
+        //BOX
+        var boxModel;
+        var modelLoader = new GLTFLoader();
+        modelLoader.load("models/streetmodels/crate.glb", (obj) => {
+            boxModel = obj.scene;
+            boxModel.scale.set(2, 2, 2);
+            boxModel.position.set(-5, 4, 100);
+            group2.add(boxModel);
+
+            var tempMesh = new THREE.Mesh(CubeGeometry, CubeMaterial);
+            tempMesh.position.set(-5, 0, 100);
+            // scene.add(tempMesh);
+            boxModel_HitBox.push(tempMesh);
+            group2.add(tempMesh);
+
+
+        });
+        //TAXI
+        var taxiModel;
+        modelLoader.load("models/streetmodels/taxi.glb", (obj) => {
+            taxiModel = obj.scene;
+            taxiModel.scale.set(2, 2, 2);
+            taxiModel.position.set(3, 2.5, 50);
+            group2.add(taxiModel);
+
+
+            var tempMesh = new THREE.Mesh(taxiGeometry, taxiMaterial);
+            tempMesh.position.set(3, 0, 49);
+            // scene.add(tempMesh);
+            taxiModel_HitBox.push(tempMesh);
+            group2.add(tempMesh);
+
+        });
+        //WHEEL1
+        var wheelModel;
+        modelLoader.load("models/streetmodels/wheel1.glb", (obj) => {
+            wheelModel = obj.scene;
+            wheelModel.scale.set(3, 3, 3);
+            wheelModel.position.set(-4, 3, 0);
+            group2.add(wheelModel);
+
+            var tempMesh = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            tempMesh.position.set(-4, 0, -5);
+            // scene.add(tempMesh);
+            wheelModel_HitBox.push(tempMesh);
+            group2.add(tempMesh);
+
+
+
+        });
+
+        //WHEEL2
+        var wheelModel;
+        modelLoader.load("models/streetmodels/wheel2.glb", (obj) => {
+            wheelModel = obj.scene;
+            wheelModel.scale.set(3, 3, 3);
+            wheelModel.position.set(0, 3, -50);
+            group2.add(wheelModel);
+            var tempMesh = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            tempMesh.position.set(0, 0, -55);
+            //  scene.add(tempMesh);
+            wheelModel_HitBox1.push(tempMesh);
+            group2.add(tempMesh);
+
+        });
+        allModelsGroup.add(group2);
+        ///////////third group of models
+        // THE GROUP OBJECT
+        var group3 = new THREE.Group();
+        var group3Col = new THREE.Group();
+        //BOX
+        var boxModel;
+        var modelLoader = new GLTFLoader();
+        modelLoader.load("models/streetmodels/crate.glb", (obj) => {
+            boxModel = obj.scene;
+            boxModel.scale.set(2, 2, 2);
+            boxModel.position.set(-5, 4, -150);
+            group3.add(boxModel);
+
+
+            var tempMesh = new THREE.Mesh(CubeGeometry, CubeMaterial);
+            tempMesh.position.set(-5, 0, -155);
+            //  scene.add(tempMesh);
+            boxModel_HitBox.push(tempMesh);
+            group3.add(tempMesh);
+
+        });
+        //TAXI
+        var taxiModel;
+        modelLoader.load("models/streetmodels/taxi.glb", (obj) => {
+            taxiModel = obj.scene;
+            taxiModel.scale.set(2, 2, 2);
+            taxiModel.position.set(3, 3, -170);
+            group3.add(taxiModel);
+
+            var tempMesh = new THREE.Mesh(taxiGeometry, taxiMaterial);
+            tempMesh.position.set(3, 0, -171);
+            //   scene.add(tempMesh);
+            taxiModel_HitBox.push(tempMesh);
+            group3.add(tempMesh);
+
+
+        });
+        //WHEEL1
+        var wheelModel;
+        modelLoader.load("models/streetmodels/wheel1.glb", (obj) => {
+            wheelModel = obj.scene;
+            wheelModel.scale.set(3, 3, 3);
+            wheelModel.position.set(-4, 3, -200);
+            group3.add(wheelModel);
+
+            var tempMesh = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            tempMesh.position.set(-4, 0, -205);
+            //   scene.add(tempMesh);
+            wheelModel_HitBox.push(tempMesh);
+            group3.add(tempMesh);
+
+
+        });
+        //WHEEL2
+        var wheelModel;
+        modelLoader.load("models/streetmodels/wheel2.glb", (obj) => {
+            wheelModel = obj.scene;
+            wheelModel.scale.set(3, 3, 3);
+            wheelModel.position.set(2, 3, -250);
+            group3.add(wheelModel);
+            var tempMesh = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            tempMesh.position.set(0, 0, -255);
+            //   scene.add(tempMesh);
+            wheelModel_HitBox1.push(tempMesh);
+            group3.add(tempMesh);
+
+        });
+        allModelsGroup.add(group3);
+
+        /////////Fourth group of models
+        // THE GROUP OBJECT
+        var group4 = new THREE.Group();
+        var group4Col = new THREE.Group();
+        //BOX
+        var boxModel;
+        var modelLoader = new GLTFLoader();
+        modelLoader.load("models/streetmodels/crate.glb", (obj) => {
+            boxModel = obj.scene;
+            boxModel.scale.set(2, 2, 2);
+            boxModel.position.set(-3, 4, -300);
+            group4.add(boxModel);
+
+
+            var tempMesh = new THREE.Mesh(CubeGeometry, CubeMaterial);
+            tempMesh.position.set(-5, 0, -305);
+            //   scene.add(tempMesh);
+            boxModel_HitBox.push(tempMesh);
+            group4.add(tempMesh);
+
+
+        });
+        //TAXI
+        var taxiModel;
+        modelLoader.load("models/streetmodels/taxi.glb", (obj) => {
+            taxiModel = obj.scene;
+            taxiModel.scale.set(2, 2, 2);
+            taxiModel.position.set(0, 3, -325);
+            group4.add(taxiModel);
+
+            var tempMesh = new THREE.Mesh(taxiGeometry, taxiMaterial);
+            tempMesh.position.set(3, 0, -326);
+            //  scene.add(tempMesh);
+            taxiModel_HitBox.push(tempMesh);
+            group4.add(tempMesh);
+
+        });
+        //WHEEL1
+        var wheelModel;
+        modelLoader.load("models/streetmodels/wheel1.glb", (obj) => {
+            wheelModel = obj.scene;
+            wheelModel.scale.set(3, 3, 3);
+            wheelModel.position.set(3, 3, -345);
+            group4.add(wheelModel);
+
+            var tempMesh = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            tempMesh.position.set(-4, 0, -350);
+            // scene.add(tempMesh);
+            wheelModel_HitBox.push(tempMesh);
+            group4.add(tempMesh);
+
+
+        });
+
+        //WHEEL2
+        var wheelModel;
+        modelLoader.load("models/streetmodels/wheel2.glb", (obj) => {
+            wheelModel = obj.scene;
+            wheelModel.scale.set(3, 3, 3);
+            wheelModel.position.set(2, 3, -375);
+            group4.add(wheelModel);
+
+            var tempMesh = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            tempMesh.position.set(0, 0, -380);
+            //  scene.add(tempMesh);
+            wheelModel_HitBox1.push(tempMesh);
+            group4.add(tempMesh);
+
+        });
+        allModelsGroup.add(group4);
+        ///////////fifth group of models
+        // THE GROUP OBJECT
+        var group5 = new THREE.Group();
+        var group5Col = new THREE.Group();
+        //BOX
+        var boxModel;
+        var modelLoader = new GLTFLoader();
+        modelLoader.load("models/streetmodels/crate.glb", (obj) => {
+            boxModel = obj.scene;
+            boxModel.scale.set(2, 2, 2);
+            boxModel.position.set(2, 4, -385);
+            group5.add(boxModel);
+
+
+            var tempMesh = new THREE.Mesh(CubeGeometry, CubeMaterial);
+            tempMesh.position.set(-5, 0, -390);
+            // scene.add(tempMesh);
+            boxModel_HitBox.push(tempMesh);
+            group5.add(tempMesh);
+
+
+        });
+        //TAXI
+        var taxiModel;
+        modelLoader.load("models/streetmodels/taxi.glb", (obj) => {
+            taxiModel = obj.scene;
+            taxiModel.scale.set(2, 2, 2);
+            taxiModel.position.set(4, 3, -400);
+            group5.add(taxiModel);
+
+
+            var tempMesh = new THREE.Mesh(taxiGeometry, taxiMaterial);
+            tempMesh.position.set(3, 0, -401);
+            //  scene.add(tempMesh);
+            taxiModel_HitBox.push(tempMesh);
+            group5.add(tempMesh);
+
+        });
+        //WHEEL1
+        var wheelModel;
+        modelLoader.load("models/streetmodels/wheel1.glb", (obj) => {
+            wheelModel = obj.scene;
+            wheelModel.scale.set(3, 3, 3);
+            wheelModel.position.set(4, 3, -360);
+            group5.add(wheelModel);
+            var tempMesh = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            tempMesh.position.set(-4, 0, -365);
+            //  scene.add(tempMesh);
+            wheelModel_HitBox.push(tempMesh);
+            group5.add(tempMesh);
+
+
+        });
+        //wheel2
+        var wheelModel;
+        modelLoader.load("models/streetmodels/wheel2.glb", (obj) => {
+            wheelModel = obj.scene;
+            wheelModel.scale.set(3, 3, 3);
+            wheelModel.position.set(0, 3, -410);
+            group5.add(wheelModel);
+
+            var tempMesh = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            tempMesh.position.set(0, 0, -415);
+            // scene.add(tempMesh);
+            wheelModel_HitBox1.push(tempMesh);
+            group5.add(tempMesh);
+
+        });
+        allModelsGroup.add(group5);
+        //////////sixth group of models
+        // THE GROUP OBJECT
+        var group6 = new THREE.Group();
+        var group6Col = new THREE.Group();
+        //BOX
+        var boxModel;
+        var modelLoader = new GLTFLoader();
+        modelLoader.load("models/streetmodels/crate.glb", (obj) => {
+            boxModel = obj.scene;
+            boxModel.scale.set(2, 2, 2);
+            boxModel.position.set(2, 4, -425);
+            group6.add(boxModel);
+
+            var tempMesh = new THREE.Mesh(CubeGeometry, CubeMaterial);
+            tempMesh.position.set(-5, 0, -430);
+            // scene.add(tempMesh);
+            boxModel_HitBox.push(tempMesh);
+            group6.add(tempMesh);
+
+        });
+        //TAXI
+        var taxiModel;
+        modelLoader.load("models/streetmodels/taxi.glb", (obj) => {
+            taxiModel = obj.scene;
+            taxiModel.scale.set(2, 2, 2);
+            taxiModel.position.set(3, 3, -440);
+            group6.add(taxiModel);
+
+            var tempMesh = new THREE.Mesh(taxiGeometry, taxiMaterial);
+            tempMesh.position.set(3, 0, -441);
+            // scene.add(tempMesh);
+            taxiModel_HitBox.push(tempMesh);
+            group6.add(tempMesh);
+
+        });
+        //WHEEL1
+        var wheelModel;
+        modelLoader.load("models/streetmodels/wheel1.glb", (obj) => {
+            wheelModel = obj.scene;
+            wheelModel.scale.set(3, 3, 3);
+            wheelModel.position.set(1, 3, -260);
+            group6.add(wheelModel);
+
+            var tempMesh = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            tempMesh.position.set(-4, 0, -265);
+            // scene.add(tempMesh);
+            wheelModel_HitBox.push(tempMesh);
+            group6.add(tempMesh);
+
+
+        });
+        //wheel2
+        var wheelModel;
+        modelLoader.load("models/streetmodels/wheel2.glb", (obj) => {
+            wheelModel = obj.scene;
+            wheelModel.scale.set(3, 3, 3);
+            wheelModel.position.set(0, 3, -445);
+            group6.add(wheelModel);
+
+            var tempMesh = new THREE.Mesh(wheelGeometry, wheelMaterial);
+            tempMesh.position.set(0, 0, -450);
+
+            wheelModel_HitBox1.push(tempMesh);
+            group6.add(tempMesh);
+
+        });
+        allModelsGroup.add(group6);
+        //adding all models to the scene
+        scene.add(allModelsGroup);
+        //KEYBOARD LISTENER
+        //motion functions
+
+        var collide = false;
+        var collidedInMiddle = false;
+        function moveForward(speed) {
+
+            console.log("forward called");
+            char.position.z -= speed;
+            charModel_HitBox.position.z -= speed;
+            camera.position.z -= speed;
+
+        }
+        function moveRight() {
+
+            char.position.x += 0.7;
+            charModel_HitBox.position.x += 0.7;
+
+
+        }
+        function moveLeft() {
+
+            char.position.x -= 0.7;
+            charModel_HitBox.position.x -= 0.7;
+
+
+        }
+
+        function jump() {
+            //raise
+            char.position.y += 0.8;
+            charModel_HitBox.position.y += 1;
+
+            window.setTimeout(() => {
+                char.position.y -= 0.8;
+                charModel_HitBox.position.y -= 1;
+
+                console.log("done");
+            }, 400);
+
+        }
+
+
+        //WHEN KEY IS PRESSED
+        //STARTING THE GAME
+        var isStarted = false;
+        function CollisionCheck() {
+            if (charIsLoaded) {
+
+                for (var i = 0; i < 6; i++) {
+                    if (Math.abs(boxModel_HitBox[i].position.x - charModel_HitBox.position.x) < charModel_HitBox_X / 2 + boxModel_HitBox_X / 2 && Math.abs(boxModel_HitBox[i].position.y - charModel_HitBox.position.y) < charModel_HitBox_Y / 2 + boxModel_HitBox_Y / 2 && Math.abs(boxModel_HitBox[i].position.z - charModel_HitBox.position.z) < (charModel_HitBox_Z / 2 + boxModel_HitBox_Z / 2)) {
+                        collide = true;
+                        fallingFromRoad();
+                    }
+                    if (Math.abs(taxiModel_HitBox[i].position.x - charModel_HitBox.position.x) < charModel_HitBox_X / 2 + taxiModel_HitBox_X / 2 && Math.abs(taxiModel_HitBox[i].position.y - charModel_HitBox.position.y) < charModel_HitBox_Y / 2 + taxiModel_HitBox_Y / 2 && Math.abs(taxiModel_HitBox[i].position.z - charModel_HitBox.position.z) < (charModel_HitBox_Z / 2 + taxiModel_HitBox_Z / 2)) {
+                        collide = true;
+                        fallingFromRoad();
+                    }
+                    if (Math.abs(wheelModel_HitBox[i].position.x - charModel_HitBox.position.x) < charModel_HitBox_X / 2 + wheelModel_HitBox_X / 2 && Math.abs(wheelModel_HitBox[i].position.y - charModel_HitBox.position.y) < charModel_HitBox_Y / 2 + wheelModel_HitBox_Y / 2 && Math.abs(wheelModel_HitBox[i].position.z - charModel_HitBox.position.z) < (charModel_HitBox_Z / 2 + wheelModel_HitBox_Z / 2)) {
+                        collide = true;
+                        fallingFromRoad();
+                    }
+
+                    if (Math.abs(wheelModel_HitBox1[i].position.x - charModel_HitBox.position.x) < charModel_HitBox_X / 2 + wheelModel_HitBox_X / 2 && Math.abs(wheelModel_HitBox1[i].position.y - charModel_HitBox.position.y) < charModel_HitBox_Y / 2 + wheelModel_HitBox_Y / 2 && Math.abs(wheelModel_HitBox1[i].position.z - charModel_HitBox.position.z) < (charModel_HitBox_Z / 2 + wheelModel_HitBox_Z / 2)) {
+                        collide = true;
+                        collidedInMiddle = true;
+                        fallingFromRoad();
+                    }
+
+                }
+
+            }
+        }
+
+
+
+        document.onkeydown = function (e) {
+            /*   if (e.keyCode == '87')//forward
+               {
+                   
+        
+                        if (isStarted) {
+                            isIdle = false;
+                            isRunning = true;
+                            runAnimation();
+                            motionController[0].pressed = true;
+                        
+               }
+               */
+
+            if (e.keyCode == '68')//Right
+            {
+                if (isStarted) {
+                    moveRight();
+                }
+
+            }
+            else if (e.keyCode == '65')//Left
+            {
+                if (isStarted) {
+                    moveLeft();
+                }
+
+
+            }
+
+            if (e.keyCode == '32')//SPACE (JUMP)
+            {
+                if (isStarted) {
+                    jump();
+                }
+
+
+            }
+            if (e.keyCode == '13') {
+                console.log("enter");
+                isStarted = true;
+                document.getElementById("enter-game").style.display = "none";
+                triggerPhaseOne();
+
+            }
+        }
+
+
+
+
+        function renderScene() {
+            renderer.render(scene, camera);
+        }
+
+        function levels() {
+
+            if (charIsLoaded) {
+                /*  if (group1.position.z > char.position.z + 300) {
+                     group1.position.z = -450;
+ 
+                 }
+                 if (group2.position.z > char.position.z + 250) {
+                     group2.position.z = -450;
+ 
+                 }
+                 if (group3.position.z > char.position.z + 300) {
+                     group3.position.z = -450;
+ 
+                 }
+ 
+                 if (group4.position.z > char.position.z + 100) {
+                     group4.position.z = -450;
+ 
+                 }
+ 
+                 if (group5.position.z > char.position.z + 100) {
+                     group5.position.z = -450;
+ 
+                 }
+ 
+                 if (group6.position.z > char.position.z + 100) {
+                     group6.position.z = -450;
+ 
+                 }
+                       */
+                //level 1
+
+                if (isStarted && char.position.z > 200) {
+                    isIdle = false;
+                    isRunning = true;
+                    runAnimation();
+                    moveForward(0.7);
+
+
+                }
+                //level 2
+                if (isStarted && char.position.z <= 200 && char.position.z > -100) {
+                    isIdle = false;
+                    isRunning = true;
+                    runAnimation();
+                    moveForward(1.7);
+
+                    //adding level scene
+                    triggerPhaseTwo();
+                    scene.remove(theme1);
+                    scene.add(theme2);
+                }
+                //level 3
+                if (isStarted && char.position.z <= -100) {
+                    isIdle = false;
+                    isRunning = true;
+                    runAnimation();
+                    moveForward(2.3);
+
+                    //adding level scene
+                    triggerPhaseThree();
+                    scene.remove(theme2);
+                    scene.add(theme3);
+                }
+            }
+        }
+
+
+        var cameraReachedMax = false;
+        var stopCameraMovement = false;
+        var floorReachedMax = false;
+        function lost() {
+            if (lives == 0) {
+                triggerGameOver();
+                //vibrate camera
+                if (!cameraReachedMax && !stopCameraMovement) {
+                    camera.position.y += 1;
+                }
+                if (cameraReachedMax && !stopCameraMovement) {
+                    camera.position.y -= 1;
+                }
+                if (camera.position.y >= 320) {
+                    cameraReachedMax = true;
+                }
+                if (camera.position.y <= 300) {
+                    cameraReachedMax = false;
+                }
+                window.setTimeout(() => {
+                    stopCameraMovement = true;
+                }, 4000);
+                //vibrate floor
+                if (!floorReachedMax) {
+                    floor.position.y += 0.08;
+                }
+                if (floorReachedMax) {
+                    floor.position.y -= 0.08;
+                }
+                if (floor.position.y >= 2) {
+                    floorReachedMax = true;
+                }
+                if (floor.position.y < 0) {
+                    floorReachedMax = false;
+                }
+                //floor fall
+                window.setTimeout(() => { floor.rotation.x -= 0.1; }, 3000);
+                //floor remove
+                window.setTimeout(() => {
+                    scene.remove(floor);
+                    scene.remove(allModelsGroup);
+                    //add losing theme
+                    scene.add(loseTheme);
+                    //add fall animation
+                    isIdle = false;
+                    isRunning = false;
+                    isFalling = true;
+                    fallAnimation();
+
+                }, 4000);
+
+                //character and camera fall
+                window.setTimeout(() => {
+                    char.position.z -= 0.05;
+                    char.rotation.x += 0.01;
+                    char.position.y -= 0.05;
+                    camera.position.y -= 0.05;
+                    camera.position.z += 0.15;
+                }, 3000);
+
+                //character remove
+                window.setTimeout(() => { scene.remove(char); }, 10000);
+
+
+            }
+
+
+        }
+
+
+        function controlMotion() {
+            for (var i = 0; i < 5; i++) {
+
+                if (motionController[i].pressed == true) {
+                    motionController[i].motion();
+                }
+
+            }
+
+        }
+        var counter = 1;
+        function cameraMovement(objLoaded) {
+            if (charIsLoaded) {
+                if (camera.position.y > 13) {
+                    camera.position.y -= 9;
+
+                }
+                if (camera.position.y <= 13 && counter > 0) {
+
+                    rotateObject(camera, 80);
+                    counter--;
+                }
+            }
+            /*
+            if (objLoaded && camera.position.y <= 12 && isStarted) {
+
+                camera.position.z -= 0.48;
+            }*/
+
+
+        }
+
+
+        function setScore(isloaded) {
+            if (lives > 0 && isloaded && isStarted) {
+                score++;
+                document.getElementById("score").innerHTML = "score: " + score;
+            }
+        }
+
+        function fallingFromRoad() {
+            if (charIsLoaded) {
+                if (char.position.x > 10 || char.position.x < -10 || collide == true) {
+                    if (lives > 0) {
+                        lives--;
+                        document.getElementById("lives").innerHTML = "lives: " + lives;
+                    }
+                    if (collide == true) {
+                        char.position.z += 10;
+                        charModel_HitBox.position.z += 10;
+                        camera.position.z += 10;
+                        collide = false;
+                    }
+
+                    char.position.x = 0;
+                    charModel_HitBox.position.x = 0;
+
+
+                }
+            }
+        }
+
+
+
+
+
+
+        function victory() {
+            if (charIsLoaded) {
+                if (char.position.z <= -450) {
+                    scene.remove(allModelsGroup);
+                    isIdle = false;
+                    isRunning = false;
+                    isWinning = true;
+                    victoryAnimation();
+                    triggerYouWon();
+                }
+            }
+        }
+        ///////////////////COLLISION////////
+
+
+        var animCounter = 1;
+        function animate() {
+
+            if (charIsLoaded && animCounter > 0) {
+                //START WITH IDLE ANIMATION CALLED ONLY ONCE
+                idleAnimation();
+                animCounter--;
+            }
+
+            requestAnimationFrame(animate);
+            CollisionCheck();
+            renderScene();
+            updateIdleAnimation();
+            updateFallingAnimation();
+            updateVictoryAnimation();
+            updateRunningAnimation();
+            // controlMotion();
+            setScore(charIsLoaded);
+            fallingFromRoad();
+            levels();
+            lost();
+            victory();
+            cameraMovement(charIsLoaded);
+
+            // Collision();
+
+        }
+
+
+
+        animate();
+
+
+
+
+    </script>
+
+
+
+    <script type="text/javascript" src="gui.js"></script>
+</body>
+
+
+</html>
